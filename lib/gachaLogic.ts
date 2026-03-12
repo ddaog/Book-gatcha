@@ -9,7 +9,7 @@ interface DailyGachaRow {
 
 export class GachaLimitExceededError extends Error {
   constructor() {
-    super("Daily pull limit reached.");
+    super("오늘 뽑기 횟수를 모두 사용했습니다.");
     this.name = "GachaLimitExceededError";
   }
 }
@@ -91,7 +91,7 @@ export async function performGachaPull(
   }
 
   if (!selectedCard) {
-    throw new Error("No cards available. Please import card data first.");
+    throw new Error("카드 데이터가 없습니다. 먼저 책 데이터를 가져와 주세요.");
   }
 
   const now = new Date().toISOString();

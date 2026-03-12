@@ -26,7 +26,7 @@ export async function GET(_: Request, context: RouteContext) {
     .single();
 
   if (error || !data) {
-    return new Response("Card not found", { status: 404 });
+    return new Response("카드를 찾을 수 없습니다.", { status: 404 });
   }
 
   const card = data as Card;
@@ -102,7 +102,7 @@ export async function GET(_: Request, context: RouteContext) {
                   fontSize: 36,
                 },
               },
-              "No cover image",
+              "표지 이미지 없음",
             ),
       ),
       createElement(
@@ -145,7 +145,7 @@ export async function GET(_: Request, context: RouteContext) {
               marginTop: "10px",
             },
           },
-          `Owned by ${stats.ownership_rate.toFixed(1)}% of players`,
+          `전체 유저의 ${stats.ownership_rate.toFixed(1)}% 보유`,
         ),
         createElement(
           "div",
@@ -156,7 +156,7 @@ export async function GET(_: Request, context: RouteContext) {
               marginTop: "8px",
             },
           },
-          `#BookGacha #${card.rarity.replaceAll(" ", "")}`,
+          `#북가챠 #${getRarityLabel(card.rarity)}`,
         ),
       ),
     ),

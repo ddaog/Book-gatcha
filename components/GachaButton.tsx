@@ -28,14 +28,16 @@ export default function GachaButton({
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload?.error ?? "Gacha pull failed");
+        throw new Error(payload?.error ?? "가챠 뽑기에 실패했습니다.");
       }
 
       onResult(payload as GachaResult);
       onRemainingChange?.((payload as GachaResult).pulls_remaining);
     } catch (pullError) {
       setError(
-        pullError instanceof Error ? pullError.message : "Unexpected error occurred.",
+        pullError instanceof Error
+          ? pullError.message
+          : "예상치 못한 오류가 발생했습니다.",
       );
     } finally {
       setIsLoading(false);
@@ -52,7 +54,7 @@ export default function GachaButton({
         disabled={isLoading}
       >
         <Sparkles className="mr-2 h-5 w-5" />
-        {isLoading ? "Pulling..." : "Start Gacha"}
+        {isLoading ? "뽑는 중..." : "가챠 뽑기"}
       </Button>
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
     </div>

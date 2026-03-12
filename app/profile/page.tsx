@@ -71,38 +71,38 @@ export default async function ProfilePage() {
       <MainNav />
       <main className="mx-auto w-full max-w-5xl space-y-5 px-4 py-6">
         <header className="glass-panel rounded-2xl p-5">
-          <h1 className="text-2xl font-bold text-zinc-100">Profile</h1>
+          <h1 className="text-2xl font-bold text-zinc-100">프로필</h1>
           <p className="mt-1 text-sm text-zinc-300">{user.email}</p>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-              <p className="text-zinc-400">Total Pulls</p>
+              <p className="text-zinc-400">총 뽑기 횟수</p>
               <p className="mt-1 text-xl font-semibold text-cyan-300">{totalPulls}</p>
             </div>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-              <p className="text-zinc-400">Today Used</p>
+              <p className="text-zinc-400">오늘 사용</p>
               <p className="mt-1 text-xl font-semibold text-cyan-300">
                 {pullsUsedToday}
               </p>
             </div>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-              <p className="text-zinc-400">Today Remaining</p>
+              <p className="text-zinc-400">오늘 남은 횟수</p>
               <p className="mt-1 text-xl font-semibold text-cyan-300">
                 {pullsRemaining}
               </p>
             </div>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-              <p className="text-zinc-400">Completion</p>
+              <p className="text-zinc-400">도감 완성률</p>
               <p className="mt-1 text-xl font-semibold text-cyan-300">{completion}%</p>
             </div>
           </div>
         </header>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-zinc-100">Rarest Card</h2>
+          <h2 className="text-lg font-semibold text-zinc-100">가장 희귀한 카드</h2>
           {rarestCard ? (
             <Card card={rarestCard} ownership={rarestCardOwnership ?? undefined} />
           ) : (
-            <p className="text-sm text-zinc-400">No cards pulled yet.</p>
+            <p className="text-sm text-zinc-400">아직 획득한 카드가 없습니다.</p>
           )}
         </section>
       </main>

@@ -14,7 +14,7 @@ export async function GET(_: Request, context: RouteContext) {
     return NextResponse.json(stats);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to load stats." },
+      { error: error instanceof Error ? error.message : "보유율 정보를 불러오지 못했습니다." },
       { status: 500 },
     );
   }

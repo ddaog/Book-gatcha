@@ -11,11 +11,11 @@ export const RARITY_TABLE: ReadonlyArray<{ rarity: Rarity; chance: number }> = [
 export const DAILY_PULL_LIMIT = 5;
 
 const rarityLabels: Record<Rarity, string> = {
-  Rare: "희귀 (Rare)",
-  "Super Rare": "초희귀 (Super Rare)",
-  Hero: "영웅 (Hero)",
-  Myth: "신화 (Myth)",
-  Legend: "전설 (Legend)",
+  Rare: "희귀",
+  "Super Rare": "초희귀",
+  Hero: "영웅",
+  Myth: "신화",
+  Legend: "전설",
 };
 
 const rarityClassNames: Record<Rarity, string> = {

@@ -64,7 +64,7 @@ export default function Card({
   const hashtags = useMemo(() => {
     const categoryTag = card.category
       ? card.category.replaceAll(" ", "").slice(0, 20)
-      : "Book";
+      : "책";
     const rarityTag = card.rarity.replaceAll(" ", "");
     return [`#BookGacha`, `#${categoryTag}`, `#${rarityTag}`];
   }, [card.category, card.rarity]);
@@ -96,7 +96,7 @@ export default function Card({
             />
           ) : (
             <div className="flex h-full items-center justify-center px-3 text-center text-sm text-zinc-400">
-              Cover unavailable
+              표지 이미지 없음
             </div>
           )}
         </div>
@@ -104,21 +104,21 @@ export default function Card({
         <h3 className="mt-4 line-clamp-2 text-lg font-bold">{card.title}</h3>
         <p className="mt-1 text-sm text-zinc-300">{card.author}</p>
         <p className="mt-3 line-clamp-3 text-xs text-zinc-400">
-          {card.summary ?? "A surprise pull from Korean library trending books."}
+          {card.summary ?? "오늘의 랜덤 책 카드입니다."}
         </p>
 
         <p className="mt-4 text-xs text-cyan-300">
           {loadingStats ? (
-            "Calculating ownership..."
+            "보유율 계산 중..."
           ) : (
             <>
-              Owned by <strong>{stats.ownership_rate.toFixed(1)}%</strong> of players
+              전체 유저의 <strong>{stats.ownership_rate.toFixed(1)}%</strong>가 보유
             </>
           )}
         </p>
 
         {typeof count === "number" ? (
-          <p className="mt-1 text-xs text-zinc-400">Owned copies: {count}</p>
+          <p className="mt-1 text-xs text-zinc-400">보유 수량: {count}</p>
         ) : null}
 
         <p className="mt-4 text-[11px] text-zinc-500">{hashtags.join(" ")}</p>

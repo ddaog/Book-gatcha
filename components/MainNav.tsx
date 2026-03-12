@@ -7,9 +7,9 @@ import { createBrowserSupabaseClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/gacha", label: "Gacha" },
-  { href: "/collection", label: "Collection" },
-  { href: "/profile", label: "Profile" },
+  { href: "/gacha", label: "가챠" },
+  { href: "/collection", label: "컬렉션" },
+  { href: "/profile", label: "프로필" },
 ];
 
 export default function MainNav() {
@@ -27,7 +27,7 @@ export default function MainNav() {
     <nav className="sticky top-0 z-20 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
         <Link href="/gacha" className="text-base font-bold text-cyan-300">
-          Book Gacha
+          북 가챠
         </Link>
         <div className="flex items-center gap-1">
           {links.map((link) => (
@@ -43,7 +43,7 @@ export default function MainNav() {
             </Link>
           ))}
           <Button variant="ghost" size="default" onClick={handleSignOut}>
-            Sign out
+            로그아웃
           </Button>
         </div>
       </div>

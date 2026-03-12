@@ -15,7 +15,7 @@ export default function AuthPanel() {
 
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
-  const submitLabel = mode === "login" ? "Log in" : "Create account";
+  const submitLabel = mode === "login" ? "로그인" : "회원가입";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,10 +47,12 @@ export default function AuthPanel() {
         throw error;
       }
 
-      setMessage("Signup complete. You can now log in.");
+      setMessage("회원가입이 완료되었습니다. 로그인해 주세요.");
       setMode("login");
     } catch (authError) {
-      setMessage(authError instanceof Error ? authError.message : "Auth failed.");
+      setMessage(
+        authError instanceof Error ? authError.message : "인증 처리 중 오류가 발생했습니다.",
+      );
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export default function AuthPanel() {
           onClick={() => setMode("login")}
           className="flex-1"
         >
-          Login
+          로그인
         </Button>
         <Button
           variant={mode === "signup" ? "default" : "secondary"}
@@ -73,13 +75,13 @@ export default function AuthPanel() {
           onClick={() => setMode("signup")}
           className="flex-1"
         >
-          Signup
+          회원가입
         </Button>
       </div>
 
       <form className="space-y-3" onSubmit={handleSubmit}>
         <label className="block text-sm text-zinc-300">
-          Email
+          이메일
           <input
             type="email"
             required
@@ -90,7 +92,7 @@ export default function AuthPanel() {
         </label>
 
         <label className="block text-sm text-zinc-300">
-          Password
+          비밀번호
           <input
             type="password"
             required
@@ -102,7 +104,7 @@ export default function AuthPanel() {
         </label>
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Please wait..." : submitLabel}
+          {loading ? "처리 중..." : submitLabel}
         </Button>
       </form>
 

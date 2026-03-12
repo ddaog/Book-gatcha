@@ -56,9 +56,9 @@ export default async function CollectionPage() {
       <MainNav />
       <main className="mx-auto w-full max-w-5xl px-4 py-6">
         <header className="mb-4">
-          <h1 className="text-2xl font-bold text-zinc-100">Collection</h1>
+          <h1 className="text-2xl font-bold text-zinc-100">컬렉션</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Unique cards: {items.length} / your total pulled cards:{" "}
+            고유 카드: {items.length}장 / 총 획득 카드:{" "}
             {data?.length ?? 0}
           </p>
         </header>

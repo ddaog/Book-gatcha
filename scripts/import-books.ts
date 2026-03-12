@@ -2,7 +2,22 @@ import { createClient } from "@supabase/supabase-js";
 import { type Rarity } from "../lib/types";
 
 const TARGET_BOOKS = 1000;
-const PAGE_SIZE = 100;
+const DISPLAY_SIZE = 100;
+const MAX_START = 1000;
+const UPSERT_CHUNK_SIZE = 200;
+
+const DEFAULT_QUERIES = [
+  "소설",
+  "에세이",
+  "자기계발",
+  "경제경영",
+  "인문",
+  "과학",
+  "역사",
+  "심리",
+  "여행",
+  "요리",
+];
 
 function getEnv(name: string): string {
   const value = process.env[name];
@@ -12,22 +27,33 @@ function getEnv(name: string): string {
   return value;
 }
 
-const data4LibraryApiKey = getEnv("DATA4LIBRARY_API_KEY");
-const aladinApiKey = getEnv("ALADIN_API_KEY");
+const naverClientId = getEnv("NAVER_CLIENT_ID");
+const naverClientSecret = getEnv("NAVER_CLIENT_SECRET");
 const supabaseUrl = getEnv("NEXT_PUBLIC_SUPABASE_URL");
 const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
+const queryList = (
+  process.env.NAVER_BOOK_QUERIES?.split(",").map((item) => item.trim()) ??
+  DEFAULT_QUERIES
+).filter(Boolean);
 
-interface RawLibraryBook {
-  bookname: string;
-  authors: string;
-  isbn13: string;
-  loanCnt?: string | number;
+interface NaverBook {
+  title: string;
+  link: string;
+  image: string;
+  author: string;
+  discount: string;
+  publisher: string;
+  isbn: string;
+  description: string;
+  pubdate: string;
 }
 
-interface AladinBook {
-  cover: string | null;
-  description: string | null;
-  categoryName: string | null;
+interface NaverBookResponse {
+  lastBuildDate: string;
+  total: number;
+  start: number;
+  display: number;
+  items: NaverBook[];
 }
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -37,121 +63,150 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   },
 });
 
-function rarityFromLoanCount(loanCnt: number): Rarity {
-  if (loanCnt >= 300) return "Legend";
-  if (loanCnt >= 220) return "Myth";
-  if (loanCnt >= 150) return "Hero";
-  if (loanCnt >= 80) return "Super Rare";
+function stripHtmlTags(value: string): string {
+  return value.replace(/<[^>]*>/g, "");
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'");
+}
+
+function normalizeText(value: string): string {
+  return decodeHtmlEntities(stripHtmlTags(value)).trim();
+}
+
+function extractIsbn13(rawIsbn: string): string | null {
+  const candidates = rawIsbn
+    .split(" ")
+    .map((token) => token.replaceAll("-", "").trim())
+    .filter(Boolean);
+
+  const fromCandidates = candidates.find((token) => /^\d{13}$/.test(token));
+  if (fromCandidates) {
+    return fromCandidates;
+  }
+
+  const onlyDigits = rawIsbn.replaceAll(/[^0-9]/g, "");
+  if (onlyDigits.length >= 13) {
+    return onlyDigits.slice(-13);
+  }
+
+  return null;
+}
+
+function rarityFromIsbn(isbn13: string): Rarity {
+  let hash = 0;
+  for (let i = 0; i < isbn13.length; i += 1) {
+    hash = (hash * 31 + isbn13.charCodeAt(i)) % 1000003;
+  }
+  const value = hash / 1000003;
+
+  if (value < 0.02) return "Legend";
+  if (value < 0.07) return "Myth";
+  if (value < 0.22) return "Hero";
+  if (value < 0.5) return "Super Rare";
   return "Rare";
 }
 
-async function fetchLibraryPage(pageNo: number): Promise<RawLibraryBook[]> {
-  const url = new URL("http://data4library.kr/api/loanItemSrch");
-  url.searchParams.set("authKey", data4LibraryApiKey);
-  url.searchParams.set("pageNo", String(pageNo));
-  url.searchParams.set("pageSize", String(PAGE_SIZE));
-  url.searchParams.set("format", "json");
+async function fetchNaverBooks(query: string, start: number): Promise<NaverBookResponse> {
+  const url = new URL("https://openapi.naver.com/v1/search/book.json");
+  url.searchParams.set("query", query);
+  url.searchParams.set("display", String(DISPLAY_SIZE));
+  url.searchParams.set("start", String(start));
+  url.searchParams.set("sort", "sim");
 
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    throw new Error(`data4library request failed (${response.status})`);
-  }
-
-  const payload = (await response.json()) as {
-    response?: { docs?: Array<{ doc?: RawLibraryBook } | RawLibraryBook> };
-  };
-
-  const docs = payload.response?.docs ?? [];
-  const normalized = docs.map((entry) => ("doc" in entry ? entry.doc : entry));
-
-  return normalized.filter((entry): entry is RawLibraryBook => {
-    return (
-      Boolean(entry) &&
-      typeof (entry as RawLibraryBook).isbn13 === "string" &&
-      (entry as RawLibraryBook).isbn13.length > 0
-    );
+  const response = await fetch(url.toString(), {
+    headers: {
+      "X-Naver-Client-Id": naverClientId,
+      "X-Naver-Client-Secret": naverClientSecret,
+      Accept: "application/json",
+    },
   });
-}
-
-async function fetchAladinByIsbn(isbn13: string): Promise<AladinBook> {
-  const url = new URL("http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx");
-  url.searchParams.set("ttbkey", aladinApiKey);
-  url.searchParams.set("itemIdType", "ISBN13");
-  url.searchParams.set("ItemId", isbn13);
-  url.searchParams.set("output", "js");
-  url.searchParams.set("Version", "20131101");
-  url.searchParams.set("Cover", "Big");
-
-  const response = await fetch(url.toString());
   if (!response.ok) {
-    return { cover: null, description: null, categoryName: null };
+    throw new Error(`네이버 책 검색 API 요청 실패 (${response.status})`);
   }
 
-  const payload = (await response.json()) as {
-    item?: Array<{
-      cover?: string;
-      description?: string;
-      categoryName?: string;
-    }>;
-  };
-
-  const item = payload.item?.[0];
-  return {
-    cover: item?.cover ?? null,
-    description: item?.description ?? null,
-    categoryName: item?.categoryName ?? null,
-  };
+  const payload = (await response.json()) as NaverBookResponse;
+  return payload;
 }
 
 async function run() {
   const dedupe = new Set<string>();
-  const collected: RawLibraryBook[] = [];
+  const rows: Array<{
+    title: string;
+    author: string;
+    isbn: string;
+    cover_url: string | null;
+    summary: string;
+    category: string;
+    rarity: Rarity;
+  }> = [];
 
-  for (let pageNo = 1; collected.length < TARGET_BOOKS; pageNo += 1) {
-    const books = await fetchLibraryPage(pageNo);
-    if (books.length === 0) {
-      break;
-    }
-
-    for (const book of books) {
-      if (!book.isbn13 || dedupe.has(book.isbn13)) {
-        continue;
+  for (const query of queryList) {
+    for (let start = 1; start <= MAX_START; start += DISPLAY_SIZE) {
+      if (rows.length >= TARGET_BOOKS) {
+        break;
       }
-      dedupe.add(book.isbn13);
-      collected.push(book);
-      if (collected.length >= TARGET_BOOKS) {
+
+      const payload = await fetchNaverBooks(query, start);
+      if (!payload.items?.length) {
+        break;
+      }
+
+      for (const item of payload.items) {
+        const isbn13 = extractIsbn13(item.isbn);
+        if (!isbn13 || dedupe.has(isbn13)) {
+          continue;
+        }
+
+        dedupe.add(isbn13);
+
+        const title = normalizeText(item.title);
+        const author = normalizeText(item.author).replaceAll("|", ", ") || "작자 미상";
+        const summary = normalizeText(item.description).slice(0, 300);
+        const category = query;
+
+        rows.push({
+          title,
+          author,
+          isbn: isbn13,
+          cover_url: item.image || null,
+          summary: summary || `${title} 도서 카드`,
+          category,
+          rarity: rarityFromIsbn(isbn13),
+        });
+
+        if (rows.length >= TARGET_BOOKS) {
+          break;
+        }
+      }
+
+      if (payload.start + payload.display > payload.total) {
         break;
       }
     }
+
+    if (rows.length >= TARGET_BOOKS) {
+      break;
+    }
   }
 
-  const rows = [];
-  for (const book of collected) {
-    const aladin = await fetchAladinByIsbn(book.isbn13);
-    const loanCnt = Number(book.loanCnt ?? 0);
-
-    rows.push({
-      title: book.bookname,
-      author: book.authors || "Unknown",
-      isbn: book.isbn13,
-      cover_url: aladin.cover,
-      summary:
-        aladin.description?.slice(0, 300) ||
-        `${book.bookname} by ${book.authors || "Unknown"}`,
-      category: aladin.categoryName ?? "General",
-      rarity: rarityFromLoanCount(loanCnt),
-    });
+  for (let i = 0; i < rows.length; i += UPSERT_CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + UPSERT_CHUNK_SIZE);
+    const { error } = await supabase
+      .from("cards")
+      .upsert(chunk, { onConflict: "isbn", ignoreDuplicates: false });
+    if (error) {
+      throw error;
+    }
   }
 
-  const { error } = await supabase
-    .from("cards")
-    .upsert(rows, { onConflict: "isbn", ignoreDuplicates: false });
-
-  if (error) {
-    throw error;
-  }
-
-  console.log(`Imported ${rows.length} books into cards table.`);
+  console.log(`네이버 API 기반으로 ${rows.length}권을 cards 테이블에 저장했습니다.`);
 }
 
 run().catch((error) => {
